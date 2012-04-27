@@ -8,6 +8,7 @@ setup(
     version="0.1.0",
     description="Checks packages in your active environment against pip requirements files",
     author="David Cramer",
+    author_email="dcramer@gmail.com",
     url="https://github.com/dcramer/piplint",
     packages=["piplint"],
     package_dir={'': 'src'},
