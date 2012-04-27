@@ -75,7 +75,7 @@ def check_requirements(requirement_files):
                 if not valid_version(version, r_compare, r_version):
                     print "Requirement %r was found in virtualenv, but is not a valid version" % r_package
                     print "Found %r, but expected %r" % (line, r_line)
-                    return 0
+                    return 1
 
                 found = True
 
