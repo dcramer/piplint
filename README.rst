@@ -8,3 +8,5 @@ ensure that any requirement listed exists within the environment, and within the
 
     source env/bin/activate
     piplint requirements/*.txt
+
+You can also pass ``--strict`` if you want to enfoce things like case sensitivity on package names.

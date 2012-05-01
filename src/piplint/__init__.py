@@ -12,7 +12,7 @@ from pkg_resources import parse_version
 from subprocess import Popen, PIPE
 
 
-def check_requirements(requirement_files):
+def check_requirements(requirement_files, strict=False):
     """
     Given a list of requirements files, checks them against the installed
     packages in the currentl environment. If any are missing, or do not fit
@@ -67,8 +67,13 @@ def check_requirements(requirement_files):
     unknown_reqs.update(set(r[0] for r in frozen_reqs).difference(set(r[0] for r in listed_reqs)))
 
     for r_package, r_compare, r_version, r_line in listed_reqs:
+        if not strict:
+            package = r_package.lower()
         found = False
+
         for package, _, version, line in frozen_reqs:
+            if not strict:
+                package = package.lower()
             if found:
                 continue
             if package == r_package:
@@ -93,11 +98,14 @@ def check_requirements(requirement_files):
 
 
 def main():
-    file_list = sys.argv[1:]
+    import optparse
+    parser = optparse.OptionParser()
+    parser.add_option("--strict", dest="strict", action='store_true', default=False)
+    (options, file_list) = parser.parse_args()
     if not file_list:
         print "Usage: piplint <requirements.txt>"
         sys.exit(1)
-    sys.exit(check_requirements(file_list))
+    sys.exit(check_requirements(file_list, **options.__dict__))
 
 if __name__ == '__main__':
     main()
