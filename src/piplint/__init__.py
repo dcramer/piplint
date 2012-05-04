@@ -59,7 +59,7 @@ def check_requirements(requirement_files, strict=False):
         with open(fname) as fp:
             for line in fp:
                 line = line.strip()
-                if not line or line.startswith('-'):
+                if not line or line.startswith('-') or line.startswith('#'):
                     continue
 
                 listed_reqs.append(parse_package_line(line))
