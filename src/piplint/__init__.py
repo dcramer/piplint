@@ -68,7 +68,7 @@ def check_requirements(requirement_files, strict=False):
 
     for r_package, r_compare, r_version, r_line in listed_reqs:
         if not strict:
-            package = r_package.lower()
+            r_package = r_package.lower()
         found = False
 
         for package, _, version, line in frozen_reqs:
