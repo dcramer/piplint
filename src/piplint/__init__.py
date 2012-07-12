@@ -20,13 +20,49 @@ def check_requirements(requirement_files, strict=False):
     about the missing dependency.
     """
     version_re = re.compile(r'^([^<>=\s#]+)\s*(>=|>|<|<=|==)?\s*([^<>=\s#]+)?(?:\s*#.*)?$')
+    checkout_re = re.compile(r'[#@]')
 
     def parse_package_line(line):
         try:
+            if line.startswith('-e'):
+                return parse_checkout_line(line)
             package, compare, version = version_re.split(line)[1:-1]
         except ValueError:
             raise ValueError("Unknown package line format: %r" % line)
         return (package, compare or None, parse_version(version) if version else None, line)
+
+    def parse_checkout_line(whole_line):
+        """
+        parse a line that starts with '-e'
+
+        e.g.,
+        -e git://github.com/jcrocholl/pep8.git@bb20999aefc394fb826371764146bf61d8e572e2#egg=pep8-dev
+        """
+        # Snip off the '-e' and any leading whitespace
+        line = whole_line[2:].lstrip()
+
+        # Check if there is a revision specified
+        if '@' in line:
+            (url, rev, eggname) = checkout_re.split(line)
+            return (url, '==', rev, line)
+        else:
+            (url, eggname) = line.split('#')
+            return (url, None, None, line)
+
+    def is_requirements_line(line):
+        """
+        line is a valid requirement in requirements file or pip freeze output
+        """
+        if not line:
+            return False
+        if line.startswith('#'):
+            return False
+        if line.startswith('-e'):
+            return True
+        if line.startswith('-'):
+            return False
+        return True
+
 
     def valid_version(version, compare, r_version):
         if not all([compare, version]):
@@ -50,7 +86,7 @@ def check_requirements(requirement_files, strict=False):
     freeze = Popen(['pip freeze'], stdout=PIPE, shell=True)
     for line in freeze.communicate()[0].splitlines():
         line = line.strip()
-        if not line or line.startswith('-'):
+        if not is_requirements_line(line):
             unknown_reqs.add(line)
             continue
         frozen_reqs.append(parse_package_line(line))
@@ -59,7 +95,7 @@ def check_requirements(requirement_files, strict=False):
         with open(fname) as fp:
             for line in fp:
                 line = line.strip()
-                if not line or line.startswith('-') or line.startswith('#'):
+                if not is_requirements_line(line):
                     continue
 
                 listed_reqs.append(parse_package_line(line))
