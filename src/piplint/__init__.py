@@ -61,6 +61,8 @@ def check_requirements(requirement_files, strict=False):
             return True
         if line.startswith('-'):
             return False
+        if line.startswith('http://') or line.startswith('https://'):
+            return False
         return True
 
 
