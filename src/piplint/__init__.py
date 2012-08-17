@@ -12,7 +12,7 @@ from pkg_resources import parse_version
 from subprocess import Popen, PIPE
 
 
-def check_requirements(requirement_files, strict=False):
+def check_requirements(requirement_files, strict=False, venv=None):
     """
     Given a list of requirements files, checks them against the installed
     packages in the currentl environment. If any are missing, or do not fit
@@ -84,8 +84,10 @@ def check_requirements(requirement_files, strict=False):
     frozen_reqs = []
     unknown_reqs = set()
     listed_reqs = []
-
-    freeze = Popen(['pip freeze'], stdout=PIPE, shell=True)
+    args = 'pip freeze'
+    if venv is not None:
+        args = venv + "/bin/" + args
+    freeze = Popen([args], stdout=PIPE, shell=True)
     for line in freeze.communicate()[0].splitlines():
         line = line.strip()
         if not is_requirements_line(line):
@@ -139,6 +141,8 @@ def main():
     import optparse
     parser = optparse.OptionParser()
     parser.add_option("--strict", dest="strict", action='store_true', default=False)
+    parser.add_option("-E", "--environment", dest="venv", metavar="DIR",
+                      default=None, help="virtualenv environment to check against")
     (options, file_list) = parser.parse_args()
     if not file_list:
         print "Usage: piplint <requirements.txt>"
