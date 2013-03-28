@@ -6,20 +6,43 @@ piplint
 :license: Apache License 2.0, see LICENSE for more details.
 """
 
+import argparse
 import os
 import re
-import sys
 from pkg_resources import parse_version
 from subprocess import Popen, PIPE
 
 
-def check_requirements(requirement_files, strict=False, verbose=False, venv=None):
+class TextColours:
+    def __init__(self, enabled=False):
+        if enabled:
+            self.enable()
+        else:
+            self.disable()
+
+    def enable(self):
+        self.OKGREEN = '\033[92m'
+        self.WARNING = '\033[93m'
+        self.FAIL = '\033[91m'
+        self.ENDC = '\033[0m'
+
+    def disable(self):
+        self.OKGREEN = ''
+        self.WARNING = ''
+        self.FAIL = ''
+        self.ENDC = ''
+
+
+def check_requirements(requirement_files, strict=False, verbose=False,
+        venv=None, do_colour=False):
     """
     Given a list of requirements files, checks them against the installed
     packages in the currentl environment. If any are missing, or do not fit
     within the version bounds, exits with a code of 1 and outputs information
     about the missing dependency.
     """
+    colour = TextColours(do_colour)
+
     version_re = re.compile(r'^([^<>=\s#]+)\s*(>=|>|<|<=|==)?\s*([^<>=\s#]+)?(?:\s*#.*)?$')
 
     def parse_package_line(line):
@@ -130,22 +153,24 @@ def check_requirements(requirement_files, strict=False, verbose=False, venv=None
                 if strict and package != r_package:
                     unknown_reqs.remove(package)
                     errors.append(
-                        "Unexpected capitalization found: %r is required but %r is installed."
-                        % (r_package, package)
+                        "%sUnexpected capitalization found: %r is required but %r is installed.%s"
+                        % (colour.WARNING, r_package, package, colour.ENDC)
                     )
                 elif valid_version(version, r_compare, r_version):
                     unknown_reqs.discard(package)
                     if verbose:
-                        print "Requirement is installed correctly: %s" % r_line
+                        print ("%sRequirement is installed correctly: %s%s"
+                               % (colour.OKGREEN, r_line, colour.ENDC))
                 else:
                     errors.append(
-                        "Unexpected version of %r found: %r is required but %r is installed."
-                        % (r_package, r_line, line)
+                        "%sUnexpected version of %r found: %r is required but %r is installed.%s"
+                        % (colour.WARNING, r_package, r_line, line, colour.ENDC)
                     )
                 break
 
         if not found:
-            errors.append("Requirement %r not installed in virtualenv." % r_package)
+            errors.append("%sRequirement %r not installed in virtualenv.%s"
+                          % (colour.FAIL, r_package, colour.ENDC))
 
     if unknown_reqs:
         print "\nFor debugging purposes, the following packages are installed but not in the requirements file(s):"
@@ -155,7 +180,9 @@ def check_requirements(requirement_files, strict=False, verbose=False, venv=None
                 if unknown_req == req[0]:
                     unknown_reqs_with_versions.append(req[3])
                     break
-        print "%s\n" % "\n".join(sorted(unknown_reqs_with_versions))
+        print "%s%s%s\n" % (colour.WARNING,
+                            "\n".join(sorted(unknown_reqs_with_versions)),
+                            colour.ENDC)
 
     if errors:
         print "Errors found:"
@@ -164,23 +191,34 @@ def check_requirements(requirement_files, strict=False, verbose=False, venv=None
         return 1
 
     if not errors and not unknown_req:
-        print "No errors found; all packages accounted for!"
+        print ("%sNo errors found; all packages accounted for!%s"
+               % (colour.OKGREEN, colour.ENDC))
 
     return 0
 
 
 def main():
-    import optparse
-    parser = optparse.OptionParser()
-    parser.add_option("-s", "--strict", dest="strict", action='store_true', default=False)
-    parser.add_option("-v", "--verbose", dest="verbose", action='store_true', default=False)
-    parser.add_option("-E", "--environment", dest="venv", metavar="DIR",
-                      default=None, help="virtualenv environment to check against")
-    (options, file_list) = parser.parse_args()
-    if not file_list:
-        print "Usage: piplint <requirements.txt>"
-        sys.exit(1)
-    sys.exit(check_requirements(file_list, **options.__dict__))
+
+    cli_parser = argparse.ArgumentParser()
+    cli_parser.add_argument('-c', '--colour', '--color', action='store_true',
+                            help='coloured output')
+    cli_parser.add_argument('-E', '--environment', dest='venv', metavar='DIR',
+                            default=None,
+                            help='virtualenv to check against')
+    cli_parser.add_argument('-s', '--strict', action='store_true',
+                            default=False,
+                            help='strict matching of package names')
+    cli_parser.add_argument('-v', '--verbose', action='store_true',
+                            default=False, help='show status of all packages')
+    cli_parser.add_argument('file', nargs='+',
+                            help='requirements file(s), use `-` for stdin')
+    cli_args = cli_parser.parse_args()
+
+    # call the main function to kick off the real work
+    check_requirements(cli_args.file, strict=cli_args.strict,
+                       verbose=cli_args.verbose, venv=cli_args.venv,
+                       do_colour=cli_args.colour,)
+
 
 if __name__ == '__main__':
     main()
