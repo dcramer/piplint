@@ -13,7 +13,7 @@ from pkg_resources import parse_version
 from subprocess import Popen, PIPE
 
 
-def check_requirements(requirement_files, strict=False, venv=None):
+def check_requirements(requirement_files, strict=False, verbose=False, venv=None):
     """
     Given a list of requirements files, checks them against the installed
     packages in the currentl environment. If any are missing, or do not fit
@@ -121,26 +121,31 @@ def check_requirements(requirement_files, strict=False, venv=None):
     errors = []
 
     for r_package, r_compare, r_version, r_line in listed_reqs:
-        if not strict:
-            r_package = r_package.lower()
+        r_package_lower = r_package.lower()
         found = False
 
         for package, _, version, line in frozen_reqs:
-            if not strict:
-                package = package.lower()
-            if found:
-                break
-            if package == r_package:
-                if valid_version(version, r_compare, r_version):
-                    found = True
+            if package.lower() == r_package_lower:
+                found = True
+                if strict and package != r_package:
+                    unknown_reqs.remove(package)
+                    errors.append(
+                        "Unexpected capitalization found: %r is required but %r is installed."
+                        % (r_package, package)
+                    )
+                elif valid_version(version, r_compare, r_version):
+                    unknown_reqs.discard(package)
+                    if verbose:
+                        print "Requirement is installed correctly: %s" % r_line
                 else:
                     errors.append(
-                        "Requirement %r was found in virtualenv, but is not a valid version"
-                        "\tFound %r, but expected %r" % (r_package, line, r_line)
+                        "Unexpected version of %r found: %r is required but %r is installed."
+                        % (r_package, r_line, line)
                     )
+                break
 
         if not found:
-            errors.append("Requirement %r not found in virtualenv." % r_package)
+            errors.append("Requirement %r not installed in virtualenv." % r_package)
 
     if unknown_reqs:
         print "\nFor debugging purposes, the following packages are installed but not in the requirements file(s):"
@@ -167,7 +172,8 @@ def check_requirements(requirement_files, strict=False, venv=None):
 def main():
     import optparse
     parser = optparse.OptionParser()
-    parser.add_option("--strict", dest="strict", action='store_true', default=False)
+    parser.add_option("-s", "--strict", dest="strict", action='store_true', default=False)
+    parser.add_option("-v", "--verbose", dest="verbose", action='store_true', default=False)
     parser.add_option("-E", "--environment", dest="venv", metavar="DIR",
                       default=None, help="virtualenv environment to check against")
     (options, file_list) = parser.parse_args()
