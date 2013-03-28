@@ -190,7 +190,7 @@ def check_requirements(requirement_files, strict=False, verbose=False,
         print "You must correct your environment before committing (and running tests).\n"
         return 1
 
-    if not errors and not unknown_req:
+    if not errors and not unknown_reqs:
         print ("%sNo errors found; all packages accounted for!%s"
                % (colour.OKGREEN, colour.ENDC))
 
