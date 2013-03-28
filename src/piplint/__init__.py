@@ -118,6 +118,8 @@ def check_requirements(requirement_files, strict=False, venv=None):
 
     unknown_reqs.update(set(r[0] for r in frozen_reqs).difference(set(r[0] for r in listed_reqs)))
 
+    errors = []
+
     for r_package, r_compare, r_version, r_line in listed_reqs:
         if not strict:
             r_package = r_package.lower()
@@ -127,24 +129,37 @@ def check_requirements(requirement_files, strict=False, venv=None):
             if not strict:
                 package = package.lower()
             if found:
-                continue
+                break
             if package == r_package:
-                if not valid_version(version, r_compare, r_version):
-                    print "Requirement %r was found in virtualenv, but is not a valid version" % r_package
-                    print "Found %r, but expected %r" % (line, r_line)
-                    return 1
-
-                found = True
+                if valid_version(version, r_compare, r_version):
+                    found = True
+                else:
+                    errors.append(
+                        "Requirement %r was found in virtualenv, but is not a valid version"
+                        "\tFound %r, but expected %r" % (r_package, line, r_line)
+                    )
 
         if not found:
-            print "Requirement %r not found in virtualenv." % r_package
-            print "You must correct your environment before committing (and running tests)."
-            if unknown_reqs:
-                print ""
-                print "For debugging purposes, the following unrecognized requirements were found:"
-                print ""
-                print "\n".join(sorted(unknown_reqs))
-            return 1
+            errors.append("Requirement %r not found in virtualenv." % r_package)
+
+    if unknown_reqs:
+        print "\nFor debugging purposes, the following packages are installed but not in the requirements file(s):"
+        unknown_reqs_with_versions = []
+        for unknown_req in unknown_reqs:
+            for req in frozen_reqs:
+                if unknown_req == req[0]:
+                    unknown_reqs_with_versions.append(req[3])
+                    break
+        print "%s\n" % "\n".join(sorted(unknown_reqs_with_versions))
+
+    if errors:
+        print "Errors found:"
+        print '\n'.join(errors)
+        print "You must correct your environment before committing (and running tests).\n"
+        return 1
+
+    if not errors and not unknown_req:
+        print "No errors found; all packages accounted for!"
 
     return 0
 
