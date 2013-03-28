@@ -6,6 +6,7 @@ piplint
 :license: Apache License 2.0, see LICENSE for more details.
 """
 
+import os
 import re
 import sys
 from pkg_resources import parse_version
@@ -94,6 +95,17 @@ def check_requirements(requirement_files, strict=False, venv=None):
             unknown_reqs.add(line)
             continue
         frozen_reqs.append(parse_package_line(line))
+
+    # Requirements files may include other requirements files;
+    # if so, add to list.
+    included_files = []
+    for file in requirement_files:
+        path = os.path.dirname(file)
+        args = "grep '^\-r' %s" % file
+        grep = Popen([args], stdout=PIPE, shell=True)
+        for line in grep.communicate()[0].splitlines():
+            included_files.append(os.path.join(path, line[2:].lstrip()))
+    requirement_files.extend(included_files)
 
     for fname in requirement_files:
         with open(fname) as fp:
