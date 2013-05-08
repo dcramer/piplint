@@ -20,7 +20,6 @@ def check_requirements(requirement_files, strict=False, venv=None):
     about the missing dependency.
     """
     version_re = re.compile(r'^([^<>=\s#]+)\s*(>=|>|<|<=|==)?\s*([^<>=\s#]+)?(?:\s*#.*)?$')
-    checkout_re = re.compile(r'[#@]')
 
     def parse_package_line(line):
         try:
@@ -43,7 +42,8 @@ def check_requirements(requirement_files, strict=False, venv=None):
 
         # Check if there is a revision specified
         if '@' in line:
-            (url, rev, eggname) = checkout_re.split(line)
+            url, last_bit = line.rsplit('@', 1)
+            rev, eggname = last_bit.split('#', 1)
             return (url, '==', rev, line)
         else:
             (url, eggname) = line.split('#')
