@@ -9,6 +9,7 @@ piplint
 import argparse
 import os
 import re
+import sys
 from pkg_resources import parse_version
 from subprocess import Popen, PIPE
 
@@ -215,9 +216,10 @@ def main():
     cli_args = cli_parser.parse_args()
 
     # call the main function to kick off the real work
-    check_requirements(cli_args.file, strict=cli_args.strict,
-                       verbose=cli_args.verbose, venv=cli_args.venv,
-                       do_colour=cli_args.colour,)
+    code = check_requirements(cli_args.file, strict=cli_args.strict,
+                              verbose=cli_args.verbose, venv=cli_args.venv,
+                              do_colour=cli_args.colour,)
+    sys.exit(code)
 
 
 if __name__ == '__main__':
