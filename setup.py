@@ -5,7 +5,7 @@ from setuptools import setup
 setup(
     name="piplint",
     license='Apache License 2.0',
-    version="0.1.1",
+    version="0.2.0",
     description="Checks packages in your active environment against pip requirements files",
     author="David Cramer",
     author_email="dcramer@gmail.com",
