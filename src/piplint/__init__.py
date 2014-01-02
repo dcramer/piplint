@@ -82,6 +82,8 @@ def check_requirements(requirement_files, strict=False, verbose=False,
             return False
         if line.startswith('#'):
             return False
+        if line.endswith(' # optional'):
+            return False
         if line.startswith('-e'):
             return True
         if line.startswith('-'):
