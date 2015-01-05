@@ -5,11 +5,13 @@ piplint
 :copyright: 2012 DISQUS.
 :license: Apache License 2.0, see LICENSE for more details.
 """
+from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import os
 import re
 import sys
+
 from pkg_resources import parse_version
 from subprocess import Popen, PIPE
 
@@ -22,20 +24,20 @@ class TextColours:
             self.disable()
 
     def enable(self):
-        self.OKGREEN = '\033[92m'
-        self.WARNING = '\033[93m'
-        self.FAIL = '\033[91m'
-        self.ENDC = '\033[0m'
+        self.OKGREEN = u'\033[92m'
+        self.WARNING = u'\033[93m'
+        self.FAIL = u'\033[91m'
+        self.ENDC = u'\033[0m'
 
     def disable(self):
-        self.OKGREEN = ''
-        self.WARNING = ''
-        self.FAIL = ''
-        self.ENDC = ''
+        self.OKGREEN = u''
+        self.WARNING = u''
+        self.FAIL = u''
+        self.ENDC = u''
 
 
 def check_requirements(requirement_files, strict=False, verbose=False,
-        venv=None, do_colour=False):
+                       venv=None, do_colour=False):
     """
     Given a list of requirements files, checks them against the installed
     packages in the currentl environment. If any are missing, or do not fit
@@ -91,7 +93,6 @@ def check_requirements(requirement_files, strict=False, verbose=False,
         if line.startswith('http://') or line.startswith('https://'):
             return False
         return True
-
 
     def valid_version(version, compare, r_version):
         if not all([compare, version]):
@@ -162,8 +163,8 @@ def check_requirements(requirement_files, strict=False, verbose=False,
                 elif valid_version(version, r_compare, r_version):
                     unknown_reqs.discard(package)
                     if verbose:
-                        print ("%sRequirement is installed correctly: %s%s"
-                               % (colour.OKGREEN, r_line, colour.ENDC))
+                        print("%sRequirement is installed correctly: %s%s"
+                              % (colour.OKGREEN, r_line, colour.ENDC))
                 else:
                     errors.append(
                         "%sUnexpected version of %r found: %r is required but %r is installed.%s"
@@ -176,26 +177,26 @@ def check_requirements(requirement_files, strict=False, verbose=False,
                           % (colour.FAIL, r_package, colour.ENDC))
 
     if unknown_reqs:
-        print "\nFor debugging purposes, the following packages are installed but not in the requirements file(s):"
+        print("\nFor debugging purposes, the following packages are installed but not in the requirements file(s):")
         unknown_reqs_with_versions = []
         for unknown_req in unknown_reqs:
             for req in frozen_reqs:
                 if unknown_req == req[0]:
                     unknown_reqs_with_versions.append(req[3])
                     break
-        print "%s%s%s\n" % (colour.WARNING,
+        print("%s%s%s\n" % (colour.WARNING,
                             "\n".join(sorted(unknown_reqs_with_versions)),
-                            colour.ENDC)
+                            colour.ENDC))
 
     if errors:
-        print "Errors found:"
-        print '\n'.join(errors)
-        print "You must correct your environment before committing (and running tests).\n"
+        print("Errors found:")
+        print('\n'.join(errors))
+        print("You must correct your environment before committing (and running tests).\n")
         return 1
 
     if not errors and not unknown_reqs:
-        print ("%sNo errors found; all packages accounted for!%s"
-               % (colour.OKGREEN, colour.ENDC))
+        print("%sNo errors found; all packages accounted for!%s"
+              % (colour.OKGREEN, colour.ENDC))
 
     return 0
 
