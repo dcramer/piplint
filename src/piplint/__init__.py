@@ -46,7 +46,7 @@ def check_requirements(requirement_files, strict=False, verbose=False,
     """
     colour = TextColours(do_colour)
 
-    version_re = re.compile(r'^([^<>=\s#]+)\s*(>=|>|<|<=|==)?\s*([^<>=\s#]+)?(?:\s*#.*)?$')
+    version_re = re.compile(r'^([^<>=\s#]+)\s*(>=|>|<|<=|==|===)?\s*([^<>=\s#]+)?(?:\s*#.*)?$')
 
     def parse_package_line(line):
         try:
@@ -97,7 +97,7 @@ def check_requirements(requirement_files, strict=False, verbose=False,
     def valid_version(version, compare, r_version):
         if not all([compare, version]):
             return True
-        if compare == '==':
+        if compare in ('==', '==='):
             return version == r_version
         elif compare == '<=':
             return version <= r_version
