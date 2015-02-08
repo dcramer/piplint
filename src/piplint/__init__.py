@@ -36,7 +36,7 @@ class TextColours:
         self.ENDC = u''
 
 
-def check_requirements(requirement_files, strict=False, verbose=False,
+def check_requirements(requirement_files, strict=False, error_on_extras=False, verbose=False,
                        venv=None, do_colour=False):
     """
     Given a list of requirements files, checks them against the installed
@@ -176,6 +176,7 @@ def check_requirements(requirement_files, strict=False, verbose=False,
             errors.append("%sRequirement %r not installed in virtualenv.%s"
                           % (colour.FAIL, r_package, colour.ENDC))
 
+    code = 0
     if unknown_reqs:
         print("\nFor debugging purposes, the following packages are installed but not in the requirements file(s):")
         unknown_reqs_with_versions = []
@@ -187,18 +188,20 @@ def check_requirements(requirement_files, strict=False, verbose=False,
         print("%s%s%s\n" % (colour.WARNING,
                             "\n".join(sorted(unknown_reqs_with_versions)),
                             colour.ENDC))
+        if error_on_extras:
+            code = 2
 
     if errors:
         print("Errors found:")
         print('\n'.join(errors))
         print("You must correct your environment before committing (and running tests).\n")
-        return 1
+        code = 1
 
     if not errors and not unknown_reqs:
         print("%sNo errors found; all packages accounted for!%s"
               % (colour.OKGREEN, colour.ENDC))
 
-    return 0
+    return code
 
 
 def main():
@@ -212,6 +215,9 @@ def main():
     cli_parser.add_argument('-s', '--strict', action='store_true',
                             default=False,
                             help='strict matching of package names')
+    cli_parser.add_argument('-x', '--error-on-extras', action='store_true',
+                            default=False,
+                            help='return error if extra packages are installed in virtualenv')
     cli_parser.add_argument('-v', '--verbose', action='store_true',
                             default=False, help='show status of all packages')
     cli_parser.add_argument('file', nargs='+',
@@ -220,6 +226,7 @@ def main():
 
     # call the main function to kick off the real work
     code = check_requirements(cli_args.file, strict=cli_args.strict,
+                              error_on_extras=cli_args.error_on_extras,
                               verbose=cli_args.verbose, venv=cli_args.venv,
                               do_colour=cli_args.colour,)
     sys.exit(code)
